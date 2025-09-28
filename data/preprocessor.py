@@ -119,4 +119,6 @@ else :
 diffs = dfp.index.to_series().diff().dropna().value_counts()
 print(diffs)  # should be exactly 1:00:00
 
+#FILTERED FOR ROUND 1 TRAIN AND SAVE TO FILE
+dfp = dfp[['sin_doy', 'cos_doy', 'sin_hod', 'cos_hod', 'temp_C']]
 dfp.to_csv('processed/{}'.format(input("state_your_name_")))
