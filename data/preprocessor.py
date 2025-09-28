@@ -118,3 +118,5 @@ else :
 
 diffs = dfp.index.to_series().diff().dropna().value_counts()
 print(diffs)  # should be exactly 1:00:00
+
+dfp.to_csv('processed/{}'.format(input("state_your_name_")))
