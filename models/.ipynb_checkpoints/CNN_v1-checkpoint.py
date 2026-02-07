@@ -23,6 +23,13 @@ def _squeeze_last_if_singleton(a: np.ndarray) -> np.ndarray:
     return a[..., 0] if (a.ndim >= 1 and a.shape[-1] == 1) else a
 
 def load_npz(path: str):
+    """
+    Load arrays from an .npz file with exact keys:
+      X_train, y_train, X_val, y_val, X_test, y_test
+
+    Returns:
+      (X_train, y_train, X_val, y_val, X_test, y_test)
+    """
     npz = np.load(path)
 
     X_train = npz["X_train"]

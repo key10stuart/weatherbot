@@ -52,12 +52,21 @@ raw_safe = "".join(c if c.isalnum() or c in "-_." else "_" for c in raw_name)
 raw_path = RAW_DIR / f"{raw_safe}.csv"
 df.to_csv(raw_path, index=False)
 
-# --- CNN prep ---
-fm15 = df[df['REPORT_TYPE'] == 'FM-15']
-print("FM15 rows:", len(fm15))  # should be 87,322
 
-# Reset index but drop old index to avoid confusion
-dfp = fm15.reset_index(drop=True)
+
+
+# INTRO QC
+dfp = df[df['REPORT_TYPE'] == 'FM-15']
+
+# DATE QC
+
+
+# TEMP QC
+
+
+
+
+
 dfp['dt_utc'] = pd.to_datetime(dfp['DATE'])
 dfp['dt_est'] = dfp['dt_utc'] - pd.Timedelta(hours=5)
 tmp_split = dfp['TMP'].astype(str).str.split(',', expand=True)
@@ -121,4 +130,4 @@ print(diffs)  # should be exactly 1:00:00
 
 #FILTERED FOR ROUND 1 TRAIN AND SAVE TO FILE
 dfp = dfp[['sin_doy', 'cos_doy', 'sin_hod', 'cos_hod', 'temp_C']]
-dfp.to_csv('processed/{}'.format(input("state_your_name_")))
+dfp.to_csv('processed/{}.csv'.format(input("state_your_name_")))

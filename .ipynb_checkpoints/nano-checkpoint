@@ -1,0 +1,104 @@
+import argparse
+import json
+import os
+import time
+from typing import Tuple
+
+
+import numpy as np
+import torch
+import torch.nn as nn
+
+
+from torch.utils.data import DataLoader
+
+
+# Local imports
+from data.dataprep import set_seed, load_npz, zscore_fit, zscore_apply, TSWindowDataset
+from models.1D_TCN import DilatedCausalCNN, receptive_field
+
+
+
+
+# ___________________________________________________________________________________________________
+# Device & Autotune
+# ___________________________________________________________________________________________________
+
+
+def pick_device():
+if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+return torch.device("mps")
+return torch.device("cpu")
+
+
+
+
+def autotune_hparams(cfg, device):
+tuned = dict(cfg)
+if device.type == "mps":
+tuned["num_workers"] = max(tuned.get("num_workers", 0), 4)
+return tuned
+tuned["batch_size"] = min(cfg.get("batch_size", 128), 64)
+tuned["channels"] = min(cfg.get("channels", 64), 48)
+tuned["num_workers"] = max(cfg.get("num_workers", 0), 2)
+tuned["lr"] = min(cfg.get("lr", 3e-3), 2e-3)
+return tuned
+
+
+
+
+# ___________________________________________________________________________________________________
+# Losses & Metrics (MASKED)
+# ___________________________________________________________________________________________________
+
+
+def masked_huber_loss(yhat, y, mask, delta=1.0):
+loss_per_element = torch.nn.functional.huber_loss(yhat, y, reduction='none', delta=delta)
+masked_loss = loss_per_element * mask
+return (masked_loss.sum() / (mask.sum() + 1e-9))
+
+
+
+
+def masked_rmse(yhat, y, mask, eps=1e-9):
+err = (yhat - y) ** 2 * mask
+return torch.sqrt(err.sum() / (mask.sum() + eps))
+
+
+
+
+def per_horizon_masked_rmse(yhat, y, mask, eps=1e-9):
+err = (yhat - y) ** 2 * mask
+per_h = torch.sqrt(err.sum(dim=0) / (mask.sum(dim=0) + eps))
+overall = torch.sqrt(err.sum() / (mask.sum() + eps))
+return per_h, overall
+
+
+
+
+def last_valid_target(xb, x_mask_b, target_idx):
+B, L, _ = xb.shape
+rev = torch.flip(x_mask_b, dims=[1])
+last_valid_from_end = torch.argmax(rev, dim=1)
+last_valid = (L - 1) - last_valid_from_end
+rows = torch.arange(B, device=xb.device)
+return xb[rows, last_valid, target_idx]
+
+
+
+
+# ___________________________________________________________________________________________________
+# Optimizer
+# ___________________________________________________________________________________________________
+
+
+def make_optimizer(model, lr=3e-4, weight_decay=1e-2):
+decay, no_decay = [], []
+for n, p in model.named_parameters():
+if not p.requires_grad:
+continue
+if n.endswith("bias") or ("ln" in n) or ("norm" in n):
+no_decay.append(p)
+else:
+decay.append(p)
+main()

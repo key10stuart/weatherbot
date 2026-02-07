@@ -1,0 +1,24 @@
+{
+  "station": null,
+  "begin": null,
+  "end": null,
+  "tz": "US/Eastern",
+  "lookback": 168,
+  "horizon": 24,
+  "channels": 64,
+  "kernel": 5,
+  "dilations": [
+    1,
+    2,
+    4,
+    8,
+    16,
+    32
+  ],
+  "batch_size": 128,
+  "epochs": 80,
+  "lr": 0.003,
+  "dropout": 0.1,
+  "patience": 8,
+  "npz": null
+}
